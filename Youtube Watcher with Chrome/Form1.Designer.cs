@@ -45,12 +45,12 @@
             this.ShowIcon = false;
             this.Text = "Youtube Watcher Alpha 0.81";
             this.TopMost = true;
-            this.TransparencyKey = System.Drawing.Color.SteelBlue;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Form1_DragEnter);
             this.DragOver += new System.Windows.Forms.DragEventHandler(this.Form1_DragOver);
+            this.DragLeave += new System.EventHandler(this.Form1_DragLeave);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
             this.MouseEnter += new System.EventHandler(this.Form1_MouseEnter);

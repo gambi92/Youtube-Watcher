@@ -17,7 +17,7 @@ namespace Youtube_Watcher_with_Chrome
 
         public bool OnDragEnter(IWebBrowser browserControl, IBrowser browser, IDragData dragData, DragOperationsMask mask)
         {
-            return false;
+            return true;
         }
 
         public void OnDraggableRegionsChanged(IWebBrowser browserControl, IBrowser browser, IList<DraggableRegion> regions)

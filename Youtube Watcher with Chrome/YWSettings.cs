@@ -19,12 +19,15 @@ using System.Windows.Forms;
 
 /* settings.cfg format:
 
-    clearCacheOnExit=1
+    clearCacheOnExit=0
     rememberMainformPosition=0
     rememberMainformSize=0
     mainformMaximized=0
+    alwaysOnTop=1
     mainformSize=400x300
     mainformPosition=0x0
+    volume=100
+    volumeIndicatorSteps=10
 
 */
 
@@ -44,7 +47,8 @@ namespace Youtube_Watcher_with_Chrome
         Point mainformPosition;
         // Default Size and Position!!!
 
-
+        
+        // Soo many unnecessary variables in this class!!!!! (I could have used the mainform's variables!)
         #region Properties
         public bool ClearCacheOnExit { get { return clearCacheOnExit; }
             set
@@ -65,6 +69,7 @@ namespace Youtube_Watcher_with_Chrome
 
             }
         }
+
         public bool RememberMainformPosition { get { return rememberMainformPosition; }
             set
             {
@@ -126,6 +131,7 @@ namespace Youtube_Watcher_with_Chrome
             set
             {
                 alwaysOnTop = value;
+                mainForm.TopMost = value;
                 int tmpIndex = rawSettings.FindIndex(a => a.Contains("alwaysOnTop="));
                 if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
                 {
@@ -157,6 +163,7 @@ namespace Youtube_Watcher_with_Chrome
                 SaveSettings();
             }
         }
+
         public Point MainformPosition { get { return mainformPosition; }
             set
             {
@@ -169,6 +176,41 @@ namespace Youtube_Watcher_with_Chrome
                 else
                 {
                     rawSettings.Add("mainformPosition=" + mainformPosition.X + "x" + mainformPosition.Y);
+                }
+                SaveSettings();
+            }
+        }
+
+        // Volume property (it's not used yet)
+        public int Volume { get { return mainForm.volume; }
+            set
+            {
+                mainForm.volume = value;
+                int tmpIndex = rawSettings.FindIndex(a => a.Contains("volume="));
+                if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
+                {
+                    rawSettings[tmpIndex] = "volume=" + mainForm.volume;
+                }
+                else
+                {
+                    rawSettings.Add("volume=" + mainForm.volume);
+                }
+                SaveSettings();
+            }
+        }
+
+        public int VolumeIndicatorSteps { get { return mainForm.volumeIndicatorSteps; }
+            set
+            {
+                mainForm.volumeIndicatorSteps = value;
+                int tmpIndex = rawSettings.FindIndex(a => a.Contains("volumeIndicatorSteps="));
+                if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
+                {
+                    rawSettings[tmpIndex] = "volumeIndicatorSteps=" + mainForm.volumeIndicatorSteps;
+                }
+                else
+                {
+                    rawSettings.Add("volumeIndicatorSteps=" + mainForm.volumeIndicatorSteps);
                 }
                 SaveSettings();
             }
@@ -190,13 +232,29 @@ namespace Youtube_Watcher_with_Chrome
 
         public void ClearCache()
         {
-            Directory.Delete("cache", true);
-            Directory.CreateDirectory("cache");
+            try
+            {
+                Directory.Delete("cache", true);
+                Directory.CreateDirectory("cache");
+            }
+
+            catch
+            {
+                //MessageBox.Show("I couldn't delete cache, because I don't have permission!");
+            }
+            
         }
 
         public void LoadSettings()
         {
-            rawSettings = File.ReadLines(settingsFilePath).ToList();
+            try
+            {
+                rawSettings = File.ReadLines(settingsFilePath).ToList();
+            }
+            catch
+            {
+                MessageBox.Show("I couldn't load settings, because I don't have permission to read my own folder!");
+            }
             
             if (rawSettings.Contains("clearCacheOnExit=1")) clearCacheOnExit = true;
             if (rawSettings.Contains("rememberMainformPosition=1")) rememberMainformPosition = true;
@@ -204,23 +262,36 @@ namespace Youtube_Watcher_with_Chrome
             if (rawSettings.Contains("mainformMaximized=1")) mainformMaximized = true;
             if (rawSettings.Contains("alwaysOnTop=0")) alwaysOnTop = false;
 
+            int tmpIndex;
             string[] rawSize;
             string[] rawPosition;
+            string[] rawVolume;
+            string[] rawVolumeIndicatorSteps;
 
-            int tmpSizeIndex = rawSettings.FindIndex(a => a.Contains("mainformSize="));
-            if (tmpSizeIndex >= 0 && tmpSizeIndex < rawSettings.Count)
+
+            tmpIndex = rawSettings.FindIndex(a => a.Contains("mainformSize="));
+            if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
             {
-                rawSize = rawSettings[tmpSizeIndex].Substring(13).Split('x');
+                rawSize = rawSettings[tmpIndex].Substring(13).Split('x');
                 mainformSize = new Size(Convert.ToInt32(rawSize[0]), Convert.ToInt32(rawSize[1]));
             } else mainformSize = mainForm.Size;
 
-            int tmpPositionIndex = rawSettings.FindIndex(a => a.Contains("mainformPosition="));
-            if (tmpPositionIndex >= 0 && tmpPositionIndex < rawSettings.Count)
+            tmpIndex = rawSettings.FindIndex(a => a.Contains("mainformPosition="));
+            if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
             {
-                rawPosition = rawSettings[tmpPositionIndex].Substring(17).Split('x');
+                rawPosition = rawSettings[tmpIndex].Substring(17).Split('x');
                 mainformPosition = new Point(Convert.ToInt32(rawPosition[0]), Convert.ToInt32(rawPosition[1]));
             } else mainformPosition = mainForm.Location;
-            
+
+            if (clearCacheOnExit)
+            {
+                mainForm.checkbox_clearCacheOnExit.Checked = true;
+            }
+            else
+            {
+                mainForm.checkbox_clearCacheOnExit.Checked = false;
+            }
+
             if (rememberMainformSize)
             {
                 mainForm.checkbox_rememberMainformSize.Checked = true;
@@ -254,17 +325,50 @@ namespace Youtube_Watcher_with_Chrome
                 mainForm.checkbox_alwaysOnTop.Checked = false;
                 mainForm.TopMost = false;
             }
+
+            tmpIndex = rawSettings.FindIndex(a => a.Contains("volume="));
+            if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
+            {
+                rawVolume = rawSettings[tmpIndex].Split('=');
+                mainForm.volume = Convert.ToInt32(rawVolume[1]);
+            }
+
+            tmpIndex = rawSettings.FindIndex(a => a.Contains("volumeIndicatorSteps="));
+            if (tmpIndex >= 0 && tmpIndex < rawSettings.Count)
+            {
+                rawVolumeIndicatorSteps = rawSettings[tmpIndex].Split('=');
+                int tmpValue = Convert.ToInt32(rawVolumeIndicatorSteps[1]);
+                mainForm.volumeIndicatorSteps = tmpValue;
+                mainForm.label_volumeIndicatorSteps.Text = tmpValue.ToString();
+                mainForm.scrollbar_volumeIndicatorSteps.Value = tmpValue;
+            }
         }
 
         public void SaveSettings()
         {
-            File.WriteAllLines(settingsFilePath, rawSettings);
+            try
+            {
+                File.WriteAllLines(settingsFilePath, rawSettings);
+            }
+            catch
+            {
+                MessageBox.Show("I couldn't save settings, because I don't have permission to modify my own folder!");
+            }
+            
         }
 
         public void ResetSettings()
         {
-            if (File.Exists(settingsFilePath)) File.Delete(settingsFilePath);
-            File.Create(settingsFilePath).Close();
+            // OPTIMIZE!!!!
+            try
+            {
+                if (File.Exists(settingsFilePath)) File.Delete(settingsFilePath);
+                File.Create(settingsFilePath).Close();
+            }
+            catch
+            {
+                MessageBox.Show("I couldn't reset settings, because I don't have permission to modify my own folder!");
+            }
             rawSettings = new List<string>();
             rawSettings.Add("clearCacheOnExit=0");
             rawSettings.Add("rememberMainformPosition=0");
@@ -273,7 +377,6 @@ namespace Youtube_Watcher_with_Chrome
             rawSettings.Add("alwaysOnTop=1");
             rawSettings.Add("mainformSize=" + mainForm.ClientSize.Width + "x" + mainForm.ClientSize.Height);
             rawSettings.Add("mainformPosition=" + mainForm.Location.X + "x" + mainForm.Location.Y);
-            SaveSettings();
             clearCacheOnExit = false;
             rememberMainformPosition = false;
             rememberMainformSize = false;
@@ -281,6 +384,11 @@ namespace Youtube_Watcher_with_Chrome
             alwaysOnTop = true;
             mainformSize = mainForm.ClientSize;
             mainformPosition = mainForm.Location;
+            SaveSettings();
+
+            mainForm.checkbox_alwaysOnTop.Checked = alwaysOnTop;
+
+            mainForm.TopMost = alwaysOnTop;
         }
 
     }
