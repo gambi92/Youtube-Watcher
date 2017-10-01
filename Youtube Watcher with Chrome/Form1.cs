@@ -39,7 +39,7 @@ namespace Youtube_Watcher_with_Chrome
             //settings.CefCommandLineArgs.Add("renderer-startup-dialog", "1");
             settings.CefCommandLineArgs.Add("enable-media-stream", "1"); //Enable WebRTC
             settings.CefCommandLineArgs.Add("no-proxy-server", "1"); //Don't use a proxy server, always make direct connections. Overrides any other proxy server flags that are passed.
-            //settings.CefCommandLineArgs.Add("debug-plugin-loading", "1"); //Dumps extra logging about plugin loading to the log file.
+            settings.CefCommandLineArgs.Add("debug-plugin-loading", "1"); //Dumps extra logging about plugin loading to the log file.
             //settings.CefCommandLineArgs.Add("disable-plugins-discovery", "1"); //Disable discovering third-party plugins. Effectively loading only ones shipped with the browser plus third-party ones as specified by --extra-plugin-dir and --load-plugin switches
             //settings.CefCommandLineArgs.Add("enable-npapi", "0"); //Enable NPAPI plugs which were disabled by default in Chromium 43 (NPAPI will be removed completely in Chromium 45)
             settings.CefCommandLineArgs.Add("allow-running-insecure-content", "1");
@@ -66,7 +66,7 @@ namespace Youtube_Watcher_with_Chrome
             // Set command line arguments to enable best performance when off screen rendering
             //https://bitbucket.org/chromiumembedded/cef/commits/e3c1d8632eb43c1c2793d71639f3f5695696a5e8
             //settings.SetOffScreenRenderingBestPerformanceArgs();
-            Cef.Initialize(settings, true, true);
+            Cef.Initialize(settings);
             chrome = new ChromiumWebBrowser("")
             {
                 BrowserSettings = new BrowserSettings()
@@ -80,7 +80,8 @@ namespace Youtube_Watcher_with_Chrome
                 AllowDrop = false,
                 BackColor = Color.Black,
                 Enabled = true,
-                LifeSpanHandler = new LifeSpanHandler(this)
+                LifeSpanHandler = new LifeSpanHandler(this),
+                //MenuHandler=
             };
             Controls.Add(chrome);
             chrome.Dock = DockStyle.None;
@@ -105,6 +106,8 @@ namespace Youtube_Watcher_with_Chrome
             DoubleBuffered = true;
         }
 
+        //WebPluginInfo plugin = new WebPluginInfo("Adblock", "", "AdBlock_v3.16.0.crx", "3.16");
+
         Timer hiderTimer = new Timer();
         Timer sensor = new Timer();
         PictureBox close = new PictureBox();
@@ -128,7 +131,7 @@ namespace Youtube_Watcher_with_Chrome
         bool dragEnter = false;
         bool maximized = false;
         bool browserInitialized = false;
-        string defaultHTML = "<!DOCTYPE html><html><head><meta charset='utf-8' /><style>body { background-color: black; }</style></head><body></body></html>";
+        //string defaultHTML = "<!DOCTYPE html><html><head><meta charset='utf-8' /><style>body { background-color: black; }</style></head><body></body></html>";
         public int volume = 50;
         public int volumeIndicatorSteps = 10;
         Point mousePos;
@@ -154,15 +157,16 @@ namespace Youtube_Watcher_with_Chrome
 
             chrome.Size = new Size(ClientSize.Width, ClientSize.Height - 50);
             chrome.Location = new Point(0, 25);
-            chrome.AllowDrop = false;
+            //chrome.AllowDrop = false;
             chrome.IsBrowserInitializedChanged += Chrome_IsBrowserInitializedChanged;
-            
+
             // Meg kell csinálni a hangerő lekérdezését JS-ből C#-ba!
             //chrome.RegisterAsyncJsObject("mainVolume", volume);
 
             sensor.Tick += Sensor_Tick;
             sensor.Interval = 1;
             sensor.Enabled = true;
+            //sensor.Enabled = false;
 
             hiderTimer.Tick += Timer_Tick;
             hiderTimer.Interval = 2000;
@@ -355,6 +359,7 @@ namespace Youtube_Watcher_with_Chrome
                             "else" +
                             "{" +*/
                             "player.loadVideoById(videoID, start, \"default\");" +
+                            "$('video').currentTime = $('video').duration" +
                     //"}" +
                     "}" +
 
@@ -365,6 +370,7 @@ namespace Youtube_Watcher_with_Chrome
                             "index: index," +
                             "startSeconds: start," +
                             "suggestedQuality: \"default\"});" +
+                            "$('video').currentTime = $('video').duration" +
                     "}" +
 
                     "function onPlayerReady(event) {" +
