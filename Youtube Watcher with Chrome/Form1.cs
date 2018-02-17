@@ -16,56 +16,28 @@ using CefSharp;
 using CefSharp.WinForms;
 
 
-// Hangerő lépték állíthatósága egy csúszkával!!!
-//   A hangerő sáv el van csúszva!!
-
 namespace Youtube_Watcher_with_Chrome
 {
     public partial class Form1 : Form
     {
         public ChromiumWebBrowser chrome;
+
+        // Setting up and initiating the chrome browser
         public void InitBrowser()
         {
-            /*string chromeBrowserCache = System.Environment.GetEnvironmentVariable("appdata");
-            chromeBrowserCache = chromeBrowserCache.Replace("Roaming", "Local");
-            chromeBrowserCache += "\\Google\\Chrome\\User Data\\Profile 1";
-            if (!Directory.Exists(chromeBrowserCache)) Directory.CreateDirectory(chromeBrowserCache);*/
             CefSettings settings = new CefSettings();
-            //settings.CachePath = chromeBrowserCache+"\\Cache";
+            // Where to save cache
             settings.CachePath = "cache";
-            //settings.l
-            //settings.UserAgent = "CefSharp Browser" + Cef.CefSharpVersion; // Example User Agent
-            //settings.CefCommandLineArgs.Add("renderer-process-limit", "1");
-            //settings.CefCommandLineArgs.Add("renderer-startup-dialog", "1");
-            settings.CefCommandLineArgs.Add("enable-media-stream", "1"); //Enable WebRTC
-            settings.CefCommandLineArgs.Add("no-proxy-server", "1"); //Don't use a proxy server, always make direct connections. Overrides any other proxy server flags that are passed.
-            settings.CefCommandLineArgs.Add("debug-plugin-loading", "1"); //Dumps extra logging about plugin loading to the log file.
-            //settings.CefCommandLineArgs.Add("disable-plugins-discovery", "1"); //Disable discovering third-party plugins. Effectively loading only ones shipped with the browser plus third-party ones as specified by --extra-plugin-dir and --load-plugin switches
-            //settings.CefCommandLineArgs.Add("enable-npapi", "0"); //Enable NPAPI plugs which were disabled by default in Chromium 43 (NPAPI will be removed completely in Chromium 45)
+            // Enable WebRTC
+            settings.CefCommandLineArgs.Add("enable-media-stream", "1");
+            // Don't use a proxy server, always make direct connections. Overrides any other proxy server flags that are passed.
+            settings.CefCommandLineArgs.Add("no-proxy-server", "1");
+            // Dumps extra logging about plugin loading to the log file
+            settings.CefCommandLineArgs.Add("debug-plugin-loading", "1");
+            // By default, an https page cannot run JavaScript, CSS or plugins from http URLs. This provides an override to get the old insecure behavior. Only available in 47 and above.
             settings.CefCommandLineArgs.Add("allow-running-insecure-content", "1");
 
-            // Nem működik!!!
-            //settings.CefCommandLineArgs.Add("enable-system-flash", "0"); //Automatically discovered and load a system-wide installation of Pepper Flash.
-
-            //settings.CefCommandLineArgs.Add("ppapi-flash-path", @"C:\WINDOWS\SysWOW64\Macromed\Flash\pepflashplayer32_18_0_0_209.dll"); //Load a specific pepper flash version (Step 1 of 2)
-            //settings.CefCommandLineArgs.Add("ppapi-flash-version", "18.0.0.209"); //Load a specific pepper flash version (Step 2 of 2)
-
-            //NOTE: For OSR best performance you should run with GPU disabled:
-            // `--disable-gpu --disable-gpu-compositing --enable-begin-frame-scheduling`
-            // (you'll loose WebGL support but gain increased FPS and reduced CPU usage).
-            // http://magpcss.org/ceforum/viewtopic.php?f=6&t=13271#p27075
-            //settings.CefCommandLineArgs.Add("disable-gpu", "1");
-            //settings.CefCommandLineArgs.Add("disable-gpu-compositing", "1");
-            //settings.CefCommandLineArgs.Add("enable-begin-frame-scheduling", "1");
-            //settings.CefCommandLineArgs.Add("disable-gpu-vsync", "1");
-
-            //Disables the DirectWrite font rendering system on windows.
-            //Possibly useful when experiencing blury fonts.
-            //settings.CefCommandLineArgs.Add("disable-direct-write", "1");
-
-            // Set command line arguments to enable best performance when off screen rendering
-            //https://bitbucket.org/chromiumembedded/cef/commits/e3c1d8632eb43c1c2793d71639f3f5695696a5e8
-            //settings.SetOffScreenRenderingBestPerformanceArgs();
+            // Initializing Crhome Browser with the settings above
             Cef.Initialize(settings);
             chrome = new ChromiumWebBrowser("")
             {
@@ -76,12 +48,12 @@ namespace Youtube_Watcher_with_Chrome
                     Javascript = CefState.Enabled,
                     WindowlessFrameRate = 60,
                 },
+                // Some classes have to be overridden in order for Drag&Drop to work
                 DragHandler = new DragHandler(),
                 AllowDrop = false,
                 BackColor = Color.Black,
                 Enabled = true,
                 LifeSpanHandler = new LifeSpanHandler(this),
-                //MenuHandler=
             };
             Controls.Add(chrome);
             chrome.Dock = DockStyle.None;
@@ -101,13 +73,15 @@ namespace Youtube_Watcher_with_Chrome
         {
             InitializeComponent();
             InitBrowser();
+
+            // Adding mouse wheel event for volume control
             MouseWheel += new MouseEventHandler(Form1_MouseWheel);
 
+            // Turning on double buffering (this is fixed flickering on some cases)
             DoubleBuffered = true;
         }
 
-        //WebPluginInfo plugin = new WebPluginInfo("Adblock", "", "AdBlock_v3.16.0.crx", "3.16");
-
+        // Initializing variables
         Timer hiderTimer = new Timer();
         Timer sensor = new Timer();
         PictureBox close = new PictureBox();
@@ -131,7 +105,6 @@ namespace Youtube_Watcher_with_Chrome
         bool dragEnter = false;
         bool maximized = false;
         bool browserInitialized = false;
-        //string defaultHTML = "<!DOCTYPE html><html><head><meta charset='utf-8' /><style>body { background-color: black; }</style></head><body></body></html>";
         public int volume = 50;
         public int volumeIndicatorSteps = 10;
         Point mousePos;
@@ -141,11 +114,9 @@ namespace Youtube_Watcher_with_Chrome
         FormWindowState previousState = FormWindowState.Normal;
 
 
-        // AutoUpdater
-        // Görgővel hangerő állítás (jelenleg nincs rá megoldás, a youtube miatt!!!)
-
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Setting up basics and UI
             Settings = new YWSettings(this);
             TransparencyKey = Color.Fuchsia;
             BackColor = Color.Fuchsia;
@@ -157,16 +128,13 @@ namespace Youtube_Watcher_with_Chrome
 
             chrome.Size = new Size(ClientSize.Width, ClientSize.Height - 50);
             chrome.Location = new Point(0, 25);
-            //chrome.AllowDrop = false;
             chrome.IsBrowserInitializedChanged += Chrome_IsBrowserInitializedChanged;
 
-            // Meg kell csinálni a hangerő lekérdezését JS-ből C#-ba!
             //chrome.RegisterAsyncJsObject("mainVolume", volume);
 
             sensor.Tick += Sensor_Tick;
             sensor.Interval = 1;
             sensor.Enabled = true;
-            //sensor.Enabled = false;
 
             hiderTimer.Tick += Timer_Tick;
             hiderTimer.Interval = 2000;
@@ -272,12 +240,9 @@ namespace Youtube_Watcher_with_Chrome
 
             relocator();
 
-
-            //Form.ActiveForm.Visible = false;
         }
 
-        // Can't apply volume on video when youtube player is loaded!!!!!
-
+        // Loading the default Youtube page with Youtube API
         private void Chrome_IsBrowserInitializedChanged(object sender, IsBrowserInitializedChangedEventArgs e)
         {
             if (e.IsBrowserInitialized && !browserInitialized)
@@ -295,41 +260,20 @@ namespace Youtube_Watcher_with_Chrome
                     "<div id='player'></div>" +
 
                     "<script>" +
-                    //"var firstRun = true;" +
-                    //"var mainVolume = 50;" +
                     "var tag = document.createElement('script');" +
 
                     "tag.src = 'https://www.youtube.com/iframe_api';" +
                     "var firstScriptTag = document.getElementsByTagName('script')[0];" +
                     "firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);" +
 
-                    //"document.getElementById('player').addEventListener('wheel', wheelEvent);"+
-
-                    /*"var myimage = document.getElementById('player');"+
-                    "if (myimage.addEventListener)"+
-                    "{"+
-                        "myimage.addEventListener('mousewheel', MouseWheelHandler, false);"+
-                    "}"+*/
-
-                    /*"function MouseWheelHandler(e) {"+
-                        "var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));"+
-                        //"myimage.style.width = Math.max(50, Math.min(800, myimage.width + (30 * delta))) + 'px';"+
-                        "player.setVolume(30);"+
-
-                        "return false;"+
-                    "}" +*/
-
                     "function SetVolume(volume) {" +
                         "player.setVolume(volume);" +
                     "}" +
 
                     "function GetVolume() {" +
-                        //"mainVolume = player.getVolume()" +
-                        //"window.mainVolume = mainVolume;" +
                         "window.mainVolume = player.getVolume();" +
                     "}" +
 
-                    //autoplay=1&fs=0&iv_load_policy=3&modestbranding=1&showinfo=0"+playList
                     "var player;" +
                     "function onYouTubeIframeAPIReady() {" +
                         "player = new YT.Player('player', {" +
@@ -341,29 +285,13 @@ namespace Youtube_Watcher_with_Chrome
                                     "'onReady': onPlayerReady," +
                                 "}" +
                          "}); " +
-                         //"player.setVolume(" + volume + ");" +
                     "}" +
 
                     "function loadVideoById(videoID, start) {" +
-                            /*"if(firstRun) {" +
-                                "player = new YT.Player('player', {" +
-                                    "height: '" + chrome.Height + "'," +
-                                    "width: '" + chrome.Width + "'," +
-                                    "videoId: videoID," +
-                                    "events: {" +
-                                        "'onReady': onPlayerReady," +
-                                    "}" +
-                                "}); " +
-                                "firstRun = false;" +
-                            "}" +
-                            "else" +
-                            "{" +*/
                             "player.loadVideoById(videoID, start, \"default\");" +
                             "$('video').currentTime = $('video').duration" +
-                    //"}" +
                     "}" +
 
-                    // firstRun beállítása itt is!!!!!!!!!!
                     "function loadPlaylist(playlistId, index, start) {" +
                         "player.loadPlaylist({" +
                             "list: playlistId," +
@@ -377,27 +305,16 @@ namespace Youtube_Watcher_with_Chrome
                         "event.target.playVideo();" +
                     "}" +
 
-                    //"SetVolume(" + volume + ");" +
-
                     "</script>" +
                     "</body>" +
                     "</html>";
 
                 chrome.GetMainFrame().LoadStringForUrl(html, "https://www.youtube.com/");
-                //chrome.ExecuteScriptAsync("SetVolume(" + volume + ");");
                 browserInitialized = true;
-
-                //chrome.ExecuteScriptAsync("SetVolume(" + volume + ");");
-
-                //chrome.ExecuteScriptAsync("loadVideoById(\"JwwI9SagjfU\", 0);");
-                //chrome.RegisterJsObject("mainVolume", volume);
-                //chrome.RegisterAsyncJsObject("mainVolume", volume);
             }
-            //chrome.ExecuteScriptAsync("SetVolume(" + volume + ");");
         }
 
-        // Hozzá kéne férni valahogy a chromium webbrowser drag&drop event-jéhez!
-        // Ez a Sensor lassú ha a gép is lassú!
+        // This sensor checks if an object is being dragged to the main window
         private void Sensor_Tick(object sender, EventArgs e)
         {
             if (Cursor.Position.X >= Location.X && Cursor.Position.X < Location.X + Size.Width && Cursor.Position.Y >= (Location.Y+25) && Cursor.Position.Y < (Location.Y+25) + (Size.Height-50))
@@ -409,47 +326,31 @@ namespace Youtube_Watcher_with_Chrome
             {
                 chrome.Enabled = false;
             }
-            //chrome.ExecuteScriptAsync("SetVolume(" + volume + ");");
-            /*if (chrome.Enabled) BackColor = Color.Red;
-            else BackColor = Color.Black;*/
         }
 
+        // This function applies a link
         public void linkApply(string text)
         {
-            // Link ellenőrzés
-            // https://www.youtube.com/watch?v=scPbcEUCiec
-            // https://www.youtube.com/v/scPbcEUCiec
-            // https://www.youtube.com/embed/scPbcEUCiec
-            // 
             chrome.ExecuteScriptAsync("SetVolume(" + volume + ");");
-
-            /////////////////////////////////////////////////////////////////////////////////
-            // Videó azonosítójának kinyerése, majd annak alapján az url újragenerálása!!! //   DONE
-            /////////////////////////////////////////////////////////////////////////////////
 
             if (text != "")
             {
                 Uri url;
+                // Cheking the validity of the URL
                 if (Uri.TryCreate(text, UriKind.Absolute, out url))
                 {
+                    // Check if it is a Youtube URL
                     if (url.Host.Contains("youtube") || url.Host.Contains("youtu.be"))
                     {
-
-                        // NEED TO OPTIMIZE!!! //
-
-                        // MAIN PROBLEM: "list=" has "t=" in it!!!!!!
-
                         string videoId = "";
                         int start = 0;
                         string tempUrl = url.ToString();
+
+                        // Loading the URL based on its content
                         if (tempUrl.Contains("/watch"))
                         {
                             int tempIndex = tempUrl.IndexOf("v=");
                             videoId = tempUrl.Substring(tempIndex + 2, 11);
-
-                            /*int tempStart= tempUrl.IndexOf("t=");
-                            if (tempStart >= 0) start = Convert.ToInt32(tempUrl.Substring(tempStart + 2));
-                            if (start < 0) start = 0;*/
 
                             if (tempUrl.Contains("list="))
                             {
@@ -470,9 +371,6 @@ namespace Youtube_Watcher_with_Chrome
                             int tempIndex = tempUrl.IndexOf("/embed/") + 7;
                             videoId = tempUrl.Substring(tempIndex, 11);
 
-                            /*int tempStart = tempUrl.IndexOf("t=");
-                            if (tempStart >= 0) start = Convert.ToInt32(tempUrl.Substring(tempStart + 2));
-                            if (start < 0) start = 0;*/
                             chrome.ExecuteScriptAsync("loadVideoById(\"" + videoId + "\", " + start + ");");
                         }
                         else if (tempUrl.Contains("/v/"))
@@ -480,9 +378,6 @@ namespace Youtube_Watcher_with_Chrome
                             int tempIndex = tempUrl.IndexOf("/v/") + 3;
                             videoId = tempUrl.Substring(tempIndex, 11);
 
-                            /*int tempStart = tempUrl.IndexOf("t=");
-                            if (tempStart >= 0) start = Convert.ToInt32(tempUrl.Substring(tempStart + 2));
-                            if (start < 0) start = 0;*/
                             chrome.ExecuteScriptAsync("loadVideoById(\"" + videoId + "\", " + start + ");");
                         }
                         else if (tempUrl.Contains("youtu.be/"))
@@ -490,9 +385,6 @@ namespace Youtube_Watcher_with_Chrome
                             int tempIndex = tempUrl.IndexOf("youtu.be/") + 9;
                             videoId = tempUrl.Substring(tempIndex, 11);
 
-                            /*int tempStart = tempUrl.IndexOf("t=");
-                            if (tempStart >= 0) start = Convert.ToInt32(tempUrl.Substring(tempStart + 2));
-                            if (start < 0) start = 0;*/
                             chrome.ExecuteScriptAsync("loadVideoById(\"" + videoId + "\", " + start + ");");
                         }
                         else if (tempUrl.Contains("list="))
@@ -500,59 +392,14 @@ namespace Youtube_Watcher_with_Chrome
                             int tempIndex = tempUrl.IndexOf("list=") + 5;
                             videoId = tempUrl.Substring(tempIndex, 34);
 
-                            /*int tempStart = tempUrl.IndexOf("t=");
-                            if (tempStart >= 0) start = Convert.ToInt32(tempUrl.Substring(tempStart + 2));
-                            if (start < 0) start = 0;*/
-
                             int plli = tempUrl.IndexOf("index=");
                             int plIndex = 1;
                             if (plli > 0) plIndex = Convert.ToInt32(tempUrl.Substring(plli + 6));
                             if (plIndex <= 0) plIndex = 1;
                             chrome.ExecuteScriptAsync("loadPlaylist(\"" + videoId + "\", "+plIndex+"," + start + ");");
                         }
-
-
-                        //chrome.ExecuteScriptAsync("loadVideoByURL(\"" + url.ToString() + "\");");
-                        //loadVideoById("bHQqvYy5KYo", 5, "large")
-
-
-                            /*
-                            string urlTemp = url.ToString();
-                            string[] tmpArray = new string[] { "v="};
-                            urlTemp.Split(tmpArray, StringSplitOptions.RemoveEmptyEntries);
-
-                            urlTemp.Substring(0);
-                            */
-
-
-                            // Load youtube video with EMBED URL..
-
-                            /*string urlTemp = url.ToString();
-                            urlTemp = urlTemp.Replace("/watch?v=", "/embed/");
-                            urlTemp = urlTemp.Replace("/v/", "/embed/");
-
-                            //https://www.youtube.com/playlist?list=PLVzg8_J3EhClXkxpQXCt1SdEMA_-LTqY-
-                            //https://www.youtube.com/watch?v=wtbTLb0PrkE&list=PLVzg8_J3EhClOAWj5fnADzOTzMgH5lmFd
-                            string playList = "";
-                            if(urlTemp.Contains("?list=") || urlTemp.Contains("&list="))
-                            {
-                                playList = "&list=";
-                                string[] tmpStringArray=new string[] { "list="};
-                                //urlTemp.Split(tmpStringArray, StringSplitOptions.RemoveEmptyEntries);
-                                playList += urlTemp.Split(tmpStringArray, StringSplitOptions.RemoveEmptyEntries)[1];
-                            }
-
-                            int tmpIndex = urlTemp.IndexOf('?');
-                            if (tmpIndex >= 0) urlTemp = urlTemp.Remove(tmpIndex);
-                            tmpIndex = urlTemp.IndexOf('&');
-                            if (tmpIndex >= 0) urlTemp = urlTemp.Remove(tmpIndex);
-
-                            chrome.Load(urlTemp + "?autoplay=1&fs=0&iv_load_policy=3&modestbranding=1&showinfo=0"+playList);
-
-                            //MessageBox.Show(playList);*/
                     }
                 }
-                //chrome.Load(text);
             }
         }
 
@@ -693,7 +540,6 @@ namespace Youtube_Watcher_with_Chrome
 
         private void Form1_MouseWheel(object sender, MouseEventArgs e)
         {
-            // maybe I have to get volume first from JS (already done above just need to copy, maybe)
             if (e.Delta > 0)
             {
                 Settings.Volume += volumeIndicatorSteps;
@@ -724,10 +570,7 @@ namespace Youtube_Watcher_with_Chrome
 
         private void Form1_MouseUp(object sender, MouseEventArgs e)
         {
-            // MouseUp event doesn't firing when mouse is still moving while mousedown event active
-            // Need to figurw out something else
-            /*if (Settings.RememberMainformPosition) Settings.MainformPosition = Location;
-            settingsPanel.Visible = false;*/
+
         }
 
         private void Form1_MouseMove(object sender, MouseEventArgs e)
@@ -786,6 +629,7 @@ namespace Youtube_Watcher_with_Chrome
             Settings.SaveSettings();
         }
 
+        // This function draws the buttons on the UI
         void drawButtons()
         {
             Pen defaultPen = new Pen(Color.FromArgb(255, 58, 59, 59), 2f);
@@ -798,7 +642,6 @@ namespace Youtube_Watcher_with_Chrome
             g.DrawLine(defaultPen, new Point(0, buttonSize.Height), new Point(buttonSize.Width, 0));
             close.Image = tmp;
 
-            // A nyíl aljával nemstimmel valami!
             tmp = new Bitmap(buttonSize.Width, buttonSize.Height);
             g = Graphics.FromImage(tmp);
             g.FillRectangle(Brushes.Black, new Rectangle(0, 0, buttonSize.Width, buttonSize.Height));
@@ -830,7 +673,6 @@ namespace Youtube_Watcher_with_Chrome
 
             tmp = new Bitmap(settingsPanel.Width, settingsPanel.Height);
             g = Graphics.FromImage(tmp);
-            //g.FillRectangle(Brushes.DarkGray, new Rectangle(0, 0, settingsPanel.Width, settingsPanel.Height));
             FontFamily fontFamily = new FontFamily("Arial");
             Font font = new Font(
                fontFamily,
@@ -843,6 +685,7 @@ namespace Youtube_Watcher_with_Chrome
             GC.Collect();
         }
 
+        // This function draws the visible window
         void drawRoundedFormWindow()
         {
             Bitmap bmp = new Bitmap(ClientSize.Width, ClientSize.Height);
@@ -871,6 +714,7 @@ namespace Youtube_Watcher_with_Chrome
             GC.Collect();
         }
 
+        // This function shows the volume indicator
         void displayVolume()
         {
             Bitmap bmp = new Bitmap(ClientSize.Width - 100, 20);
@@ -883,7 +727,7 @@ namespace Youtube_Watcher_with_Chrome
         }
 
         
-
+        // This function relocates the buttons (it is called when the window gets resized)
         void relocator()
         {
             if (WindowState == FormWindowState.Maximized)
@@ -910,32 +754,6 @@ namespace Youtube_Watcher_with_Chrome
                 drawRoundedFormWindow();
             }
             displayVolume();
-            // -------------------------------------------------------------------------------------------------------------
-
-            /*if (maximized)
-            {
-                Pen toll = new Pen(Color.Gray, 2f);
-                Bitmap tmp = new Bitmap(20, 20);
-                Graphics g = Graphics.FromImage(tmp);
-                g.FillRectangle(Brushes.Black, new Rectangle(0, 0, 20, 20));
-                g.DrawLine(toll, 2, 4, 2, 16);
-                g.DrawLine(toll, 2, 16, 18, 16);
-                g.DrawLine(toll, 18, 16, 18, 4);
-                g.DrawLine(toll, 18, 4, 2, 4);
-                maximize.Image = tmp;
-            }
-            else
-            {
-                Pen toll = new Pen(Color.Gray, 2f);
-                Bitmap tmp = new Bitmap(20, 20);
-                Graphics g = Graphics.FromImage(tmp);
-                g.FillRectangle(Brushes.Black, new Rectangle(0, 0, 20, 20));
-                g.DrawLine(toll, 5, 8, 11, 8);
-                g.DrawLine(toll, 11, 8, 11, 13);
-                g.DrawLine(toll, 11, 13, 5, 13);
-                g.DrawLine(toll, 5, 13, 5, 8);
-                maximize.Image = tmp;
-            }*/
         }
 
     }
